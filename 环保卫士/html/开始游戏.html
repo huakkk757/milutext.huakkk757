@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>开始游戏</title>
+	<style type="text/css">
+		* {
+			margin: 0;
+			padding: 0;
+		}
+
+		html,
+		body {
+			width: 100%;
+			height: 100%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			overflow-x: hidden;
+		}
+
+		canvas {
+			box-shadow: 0 0 60px 16px yellow;
+			;
+			background: white;
+			border-radius: 3px;
+			/* background-color: #e83a17; */
+		}
+		.notify {
+			padding: 3px 20px;
+			height: 40px;
+			border: 1px solid black;
+			border-radius: 5px;
+			background-color: white;
+			position: absolute;
+			top: -60px;
+			animation: display 2.5s ease-in-out;
+			text-align: center;
+			line-height: 40px;
+		}
+		@keyframes display {
+			0% {
+				top: -60px;
+			}
+			40% {
+				top: 30px;
+			}
+			100% {
+				top: 30px;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<canvas id="loadPage" width="1366px" height="768px"></canvas>
+	<script src="../js/index.js"></script>
+	<script src="../js/move.js"></script>
+	<script src="../js/关卡1.js"></script>
+	<script>
+		// 当图片加载的时候执行
+		img.onload = function () {
+			ctx.drawImage(img, 0, 0);
+			if (currentMap === 0) {
+				run()
+			}
+			if (currentMap === 1) {
+				ctx.font = "120px normal"
+				ctx.fillStyle='black'
+				ctx.fillText('开始游戏', 450, 200)
+				ctx.font = '30px italic bold'
+				ctx.fillText('Start to break through', 555, 260)
+				ctx.font = "32px normal"
+				ctx.fillText("继续游戏", 1000, 366)
+				ctx.fillText("随便逛逛", 1000, 466)
+				mouseClick()
+			}
+
+		}
+		changeSize()
+		function changeSize() {
+			ctx.clearRect(0, 0, w, h)
+			var current = 0.99
+			canvas.style.width = current * 1366 - 100 + "px"
+			canvas.style.height = current * 768 - 100 + "px"
+		}
+		// 进度条加载
+		function run() {
+			if (progress > parseInt(canvas.width)) {
+				currentMap = 1
+				window.clearTimeout(timer_progress);
+				loadMap()
+				return;
+			}
+			progress += 20
+			ctx.fillStyle = "#01a29c";
+			ctx.fillRect(0, 0, progress, 40);
+			ctx.stroke(); // 绘制定义好的矩形路径
+			timer_progress = window.setTimeout("run()", 30);
+		}
+		// 加载选项卡界面
+		function loadMap() {
+			ctx.clearRect(0, 0, w, h)
+			img.src = "../image/选项卡.png"
+			ctx.drawImage(img, 0, 0);
+		}
+
+		//  传入两个参数， 第一个是当前关卡，第二个是绘制的图片
+		function createPicture(current, arr) {
+			for (let i = 0; i < arr.length; i++) {
+				for (let j = 0; j < arr[i].map.length; j++) {
+					if (current  === arr[i].map[j]) {
+						createGarbag(arr[i].img, arr[i].x, arr[i].y, arr[i].w, arr[i].h)
+					}
+				}
+			}
+		}
+		//  当鼠标点击时运行的函数
+		function mouseClick() {
+			canvas.onclick = function (event) {
+				// 如果当前界面是通关界面，点击任意地方可以重新返回选项卡界面
+				if (currentMap === 5) {
+					isdie=0
+					// 把所有的数据改回默认值
+					currentMap = 1
+					defalut(rubbishArr)
+					defalut(starArr)
+					eatRubbishNum = [] // 每关当前吃的垃圾数组
+					currentRubbishNum = [] // 当前关卡所有垃圾
+					// 主角对象
+					leaderObj = {
+						img: '../image/可回收物.png',
+						x: 0,
+						y: 0,
+						w: 30,
+						h: 30,
+						state: 0
+					}
+					img.src = "../image/选项卡.png"
+				}
+				if(currentMap == 6){
+					isdie = 0
+					currentMap = 1
+					defalut(rubbishArr)
+					defalut(starArr)
+					isdie=0
+					eatRubbishNum = [] // 每关当前吃的垃圾数组
+					currentRubbishNum = [] // 当前关卡所有垃圾
+					// 主角对象
+					leaderObj = {
+						img: '../image/可回收物.png',
+						x: 0,
+						y: 0,
+						w: 30,
+						h: 30,
+						state: 0
+					}
+					
+					img.src = "../image/选项卡.png"
+				}
+				
+				if (currentMap !== 1) return
+				
+				let x = event.clientX - canvas.getBoundingClientRect().left;
+				let y = event.clientY - canvas.getBoundingClientRect().top;
+				if ((x > 450 && x < 920) && (y > 105 && y < 204)) {
+					currentMap = 2
+					setLocalStore(2)
+					createGuanka(0, 0, currentMap - 1)
+				}
+				//继续游戏
+				if((x > 861 && x < 1010) && (y > 290 && y < 317)){
+					isdie=0
+					if(!localStorage.getItem("currentMap")) {
+						alert("当前还没有继续的关卡")
+						return
+					}
+					let a=localStorage.getItem("currentMap")-1
+					currentMap=parseInt(localStorage.getItem("currentMap"))
+
+					if(currentMap === 4) {
+						createGuanka(0, 70, a)
+					}else {
+						createGuanka(0, 0, a)
+					}
+				}
+				
+			}
+		}
+		// 传入一个数组把数组里所有对象的isEat值为false 
+		function defalut(arr) {
+			for (let i = 0; i < arr.length; i++) {
+				arr[i].isEat = false
+			}
+		}
+		// 数组不重复
+		Array.prototype.pushNoRepeat = function () {
+			for (let i = 0; i < arguments.length; i++) {
+				let ele = arguments[i];
+				if (this.indexOf(ele) == -1) {
+					this.push(ele);
+				}
+			}
+		}
+		//  传入三个参数，x，y主角位置，当前关卡数
+		function createGuanka(x, y, current) {
+			ctx.clearRect(0, 0, w, h)
+			leaderObj.x = x
+			leaderObj.y = y
+			drawLeader()
+			createPicture(current, starArr)
+			createPicture(current, rubbishArr)
+			createPicture(current, gwObj)
+			move()
+		}
+		//  绘制主角
+		function drawLeader() {
+			leader = new Image()
+			leader.src = leaderObj.img
+			leader.onload = function () {
+				ctx.drawImage(leader, leaderObj.x, leaderObj.y, leaderObj.w, leaderObj.h);
+			}
+		}
+		function notify(text) {
+			if(document.getElementsByClassName('notify').length>0) return
+			let dom = document.createElement('div')
+			dom.className = "notify"
+			dom.innerText = text
+			document.body.appendChild(dom)
+			setTimeout(()=>{
+				document.getElementsByClassName('notify')[0].remove()
+			},3000)
+		}
+		function setLocalStore(db){
+			localStorage.setItem("currentMap",db)
+		}
+	</script>
+</body>
+
+</html>

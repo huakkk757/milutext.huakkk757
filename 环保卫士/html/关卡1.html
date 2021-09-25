@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport"
+			content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<style>
+			* {
+				padding: 0;
+				margin: 0;
+			}
+
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				//background-color: pink;
+			}
+
+			canvas {
+				box-shadow: 0 0 60px 16px yellow;
+				background: white;
+				border-radius: 3px;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="twice" width="1366px" height="768px" tabindex="0"></canvas>
+		<script type="text/javascript">
+			var canvas = document.getElementById('twice');
+			var ctx = canvas.getContext('2d');
+			var isChange = false
+			var timer=null
+			var time = 0
+			// 方块初始数据
+			var secondArr = ["183,0,31,83", "410,0,149,70", "742,0,38,134", "624,134,156,35",
+				"961,0,191,70", "856,118,168,34", "1242,0,27,56", "1230,156,80,154", "1077,156,60,210",
+				"1077,366,177,29", "1079,511,164,29", "207,182,157,35", "183,259,32,173", "56,401,127,31",
+				"281,334,138,138", "507,191,31,273", "638,227,282,158", "56,588,104,34", "160,588,31,180",
+				"274,572,169,35", "247,708,39,60", "427,658,219,32", "427,690,27,78", "649,460,261,36",
+				"787,577,26,173", "910,460,31,274", "1084,667,163,23"
+			]
+			var left = right = up = down = false
+			var b = 5
+			var leader = null
+			var leaderObj = {
+				img: '../image/可回收物.png',
+				x: 0,
+				y: 0,
+				w: 30,
+				h: 30,
+				state:0
+			}
+			drawLeader()
+
+			function drawLeader() {
+				leader = new Image()
+				leader.src = leaderObj.img
+				leader.onload = function() {
+					ctx.drawImage(leader, leaderObj.x, leaderObj.y, leaderObj.w, leaderObj.h);
+					move()
+				}
+			}
+			
+			var rubbishArr = [{
+					img: '../image/苹果.png',
+					x: 56,
+					y: 490,
+					w: 80,
+					h: 90,
+					isEat: false,
+					class:1
+				},
+				{
+					img: '../image/香蕉皮.png',
+					x: 500,
+					y: 580,
+					w: 70,
+					h: 70,
+					isEat: false,
+					class:1
+				},
+				{
+					img: '../image/鸡蛋.png',
+					x: 290,
+					y: 270,
+					w: 80,
+					h: 60,
+					isEat: false,
+					class:1
+				},
+				{
+					img: '../image/易拉罐.png',
+					x: 858,
+					y: 50,
+					w: 90,
+					h: 60,
+					isEat: false,
+					class:2
+				},
+				{
+					img: '../image/水杯.png',
+					x: 1089,
+					y: 440,
+					w: 90,
+					h: 60,
+					isEat: false,
+					class:2
+				},
+				{
+					img: '../image/纸团.png',
+					x: 650,
+					y: 74,
+					w: 60,
+					h: 60,
+					isEat: false,
+					class:2
+				}]
+			
+			//生成画布上的垃圾图片
+			function createGarbag(address, x, y, w, h) {
+				let img = new Image()
+				img.src = address
+				img.onload = function() {
+					ctx.drawImage(img, x, y, w, h)
+				}
+			}
+			//便于清除画布时快速生成图案
+			function all() {
+				for (let i = 0; i < rubbishArr.length; i++) {
+					if(rubbishArr[i].isEat==false){
+						createGarbag(rubbishArr[i].img, rubbishArr[i].x, rubbishArr[i].y, rubbishArr[i].w, rubbishArr[i].h)
+					}
+				}
+			}
+			var star = {
+				img: '../image/绿星星.png',
+				x: 261,
+				y: 130,
+				w: 30,
+				h: 30
+			}
+			var star1 = {
+				img: '../image/蓝星星.png',
+				x: 666,
+				y: 570,
+				w: 30,
+				h: 30
+			}
+			createGarbag(star1.img, star1.x, star1.y, star1.w, star1.h)
+			createGarbag(star.img, star.x, star.y, star.w, star.h)
+			//画布比例大小
+			var bWidtn = document.body.clientWidth
+			var bHeigth = document.body.clientHeight
+			var w = canvas.width;
+			var h = canvas.height;
+			var isFirst = true
+			var current = 1
+			function changeSize() {
+				canvas.style.width = current * 1366 - 100 + "px"
+				canvas.style.height = current * 768 - 100 + "px"
+				createStage(secondArr, '#01a29c', current)
+				move()
+			}
+			changeSize()
+			//绘制第一关卡图形
+			function createStage(array, color, size) {
+				all()
+				ctx.fillStyle = color;
+				for (let i = 0; i < array.length; i++) {
+					var Array = array[i].split(",");
+					ctx.fillRect(Array[0] * size, Array[1] * size, Array[2] * size, Array[3] * size);
+				}
+			}
+			function keydown() {
+				window.onkeydown = function(e) {
+					switch (e.keyCode) {
+						case 87:
+						case 38: // up 
+							up = true
+							break
+						case 83:
+						case 40: //down
+							down = true
+							break
+						case 65:
+						case 37: //left
+							left = true
+							break
+						case 68:
+						case 39: //rigth
+							right = true
+					}
+				}
+			}
+
+			function keyup() {
+				window.onkeyup = function(e) {
+					switch (e.keyCode) {
+						case 87:
+						case 38: // up 
+							up = false
+							break
+						case 83:
+						case 40: //down
+							down = false
+							break
+						case 65:
+						case 37: //left
+							left = false
+							break
+						case 68:
+						case 39: //rigth
+							right = false
+					}
+				}
+			}
+
+			function move() {
+				if (timer !== null) return
+				timer = setInterval(() => {
+					if (left) {
+						leaderObj.x = leaderObj.x - b
+						createBg()
+					}
+					if (up) {
+						leaderObj.y = leaderObj.y - b
+						createBg()
+					}
+					if (right) {
+						leaderObj.x = leaderObj.x + b
+						createBg()
+					}
+					if (down) {
+						leaderObj.y = leaderObj.y + b
+						createBg()
+					}
+				}, 30)
+				keydown()
+				keyup()
+			}
+			function createBg() {
+				panduan()
+				ctx.clearRect(leaderObj.x-10, leaderObj.y-10, leaderObj.w+20, leaderObj.h+15)
+				ctx.drawImage(leader, leaderObj.x, leaderObj.y, leaderObj.w, leaderObj.h)
+				createStage(secondArr, '#01a29c', current)
+			}
+
+			function panduan() {
+				//判断与地图边界碰撞
+				if (leaderObj.x > 1366 - leaderObj.w) {
+					leaderObj.x = 1366 - leaderObj.w
+				}
+				if (leaderObj.x < 0) {
+					leaderObj.x = 0
+				}
+				if (leaderObj.y > 768 - leaderObj.h) {
+					leaderObj.y = 768 - leaderObj.h
+				}
+				if (leaderObj.y < 0) {
+					leaderObj.y = 0
+				}
+				//判断与星星碰撞
+				if (collision(leaderObj, star)) {
+					leaderObj.img = '../image/厨余垃圾.png'
+					leaderObj.state=1
+					drawLeader()
+					ctx.clearRect(star.x, star.y, star.w, star.h)
+				}
+				if (collision(leaderObj, star1)) {
+					leaderObj.img = '../image/可回收物.png'
+					leaderObj.state=0
+					drawLeader()
+					ctx.clearRect(star1.x, star1.y, star1.w, star1.h)
+				}
+				//判断与方块的碰撞
+				for (var i = 0; i < secondArr.length; i++) {
+					let Array = secondArr[i].split(",")
+					let obj = {
+						x: parseInt(Array[0]),
+						y: parseInt(Array[1]),
+						w: parseInt(Array[2]),
+						h: parseInt(Array[3])
+					}
+					if (collision(leaderObj, obj)) {
+						back()
+						return
+					}
+				}
+				if(rubbishArr.length==0){
+					window.location.href="关卡2.html";
+				}
+				//判断与垃圾碰撞
+				for (let i = 0; i < rubbishArr.length; i++) {
+					if(collision(leaderObj,rubbishArr[i])){
+						if(rubbishArr[i].class==2&&leaderObj.state==0||rubbishArr[i].class==1&&leaderObj.state==1){
+							ctx.clearRect(rubbishArr[i].x-2, rubbishArr[i].y-2, rubbishArr[i].w+2, rubbishArr[i].h+2)
+							rubbishArr.splice(i,1)
+							rubbishArr[i].isEat=true
+						}else{
+							back()
+						}
+						return
+					}
+					
+				}
+			}
+			//碰撞后后移
+			function back(){
+				if (left) {
+					leaderObj.x = leaderObj.x + b
+				}
+				if (up) {
+					leaderObj.y = leaderObj.y + b
+				}
+				if (right) {
+					leaderObj.x = leaderObj.x - b
+				}
+				if (down) {
+					leaderObj.y = leaderObj.y - b
+				}
+			}
+			// 传入两个对象，判断两个对象是否碰撞
+			function collision(box, box2) {
+				if ((box2.x + box2.w - box.x <= box.w + box2.w) && (box2.x + box2.w - box.x >= 0) &&
+					(box2.y + box2.h - box.y <= box.h + box2.h) && box2.y + box2.h - box.y >= 0) {
+					return true
+				}
+				return false
+			}
+			
+		</script>
+	</body>
+</html>
